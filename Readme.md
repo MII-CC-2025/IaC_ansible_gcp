@@ -15,7 +15,7 @@ $ pip install requests google-auth
 
 ### Genera las credenciales con una cuenta de servicio
 
-1.- EN la consola web de GCP accede al Menu, IAM y Cuenta de Servicio.
+1.- En la consola web de GCP accede al Menu, IAM y Cuenta de Servicio.
 Si se solicita, seleccione el proyecto o cree uno nuevo. Supongamos que el ID del proyecto es cc-2024.
 
 2.- Clic en + Crear cuenta de servicio.
@@ -314,11 +314,8 @@ Obviamente se trata de una aplicación muy simple, en la carpeta app/ vamos a cr
 ```php
 <?php
 
- echo "<h1>Hello, World! This is my Ansible page</h1>";
- echo "<h2>";
- $hn = gethostname();
- echo $hn;
- echo "</h2>";
+ echo "<h1>Hello, World! This is my WebAPP deployed with Ansible</h1>";
+ echo "<h2>" . gethostname() . "</h2>";
 
 ?>
 ```
