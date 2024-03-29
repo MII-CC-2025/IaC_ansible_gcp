@@ -1,0 +1,29 @@
+# deploy-app.yml
+
+---
+- name: Upload App and Confgure PHP
+  hosts: webservers
+  become: true
+  tasks:
+
+  - name: Delete Old App
+    ansible.builtin.file:
+      state: absent
+      path: /var/www/html/index.html
+
+  - name: Upload application file
+    copy:
+      src: app/index.php
+      dest: /var/www/html
+      mode: 0755
+
+  - name: Configure php.ini file
+    lineinfile:
+      path: /etc/php/7.4/cli/php.ini
+      regexp: ^short_open_tag
+      line: 'short_open_tag=Off'
+    notify: restart apache
+
+  handlers:
+  - name: restart apache
+    service: name=apache2 state=restarted

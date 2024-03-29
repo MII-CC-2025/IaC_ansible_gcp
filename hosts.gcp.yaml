@@ -1,0 +1,13 @@
+---
+plugin: gcp_compute
+zones:
+  - us-central1-a
+projects:
+  - cc-2024
+auth_kind: serviceaccount
+#service_account_file: Variable de entorno GCP_SERVICE_ACCOUNT_FILE 
+filters:
+  - status = RUNNING
+groups:
+  webservers: "'web' in name"
+  loadbalancer: "'lb' in name"

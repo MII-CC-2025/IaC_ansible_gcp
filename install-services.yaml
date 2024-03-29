@@ -1,0 +1,27 @@
+# install-services.yml
+
+---
+- name: Install Apache on loadbalancer
+  hosts: loadbalancer
+  become: true
+  tasks:
+
+  - name: Install the latest version of Apache2
+    ansible.builtin.apt:
+      name: apache2
+      state: present
+  - name: Ensure apache starts
+    service: name=apache2 state=started enabled=yes
+
+- name: Install Apache and PHP on WebServers
+  hosts: webservers
+  become: true
+  tasks:
+  - name: Installing services
+    ansible.builtin.apt:
+      name:
+      - apache2
+      - php
+      state: present
+  - name: Ensure apache starts
+    service: name=apache2 state=started enabled=yes

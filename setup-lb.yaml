@@ -1,0 +1,33 @@
+# setup-lb.yml
+---
+- name: Configure loadbalancer
+  hosts: loadbalancer
+  become: true
+  tasks:
+
+  - name: Enable Apache2 Lb Modules
+    community.general.apache2_module:
+      name: "{{ item.module }}"
+      state: present
+      warn_mpm_absent: false
+      ignore_configcheck: true
+    loop:
+      - module: proxy
+      - module: proxy_http
+      - module: proxy_balancer
+      - module: lbmethod_byrequests
+
+  - name: Creating template
+    ansible.builtin.template:
+      src: config/lb.conf
+      dest:  /etc/apache2/conf-enabled/lb.conf
+      owner: root
+      group: root
+      mode: 064
+    notify: restart apache2
+
+  handlers:
+  - name: restart apache2
+    ansible.builtin.service:
+      name: apache2
+      state: restarted
