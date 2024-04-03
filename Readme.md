@@ -47,13 +47,13 @@ Crea el fichero hosts.gcp.yaml:
 
 ```yaml
 ---
-plugin: gcp_compute
+plugin: google.cloud.gcp_compute
 zones:
   - us-central1-a
 projects:
   - cc-2024
 auth_kind: serviceaccount
-# service_account_file: Variable de entorno GCP_SERVICE_ACCOUNT_FILE
+#service_account_file: Variable de entorno GCP_SERVICE_ACCOUNT_FILE 
 filters:
   - status = RUNNING
 groups:
@@ -67,13 +67,13 @@ Crea el fichero de configuración ansible.cfg:
 # ansible.cfg
 
 [defaults]
-inventory = ./hosts.gcp.yaml
+enable_plugins = google.cloud.gcp_compute
 
-[inventory]
-enable_plugins = gcp_compute
+inventory = ./hosts.gcp.yaml
 ```
 
-Comprueba que todo está correcto mostrando información del inventario, si no tienes máquinas virtuales activas debería aparecer algo similar a lo mostrado en el siguiente comando, en caso contrario aparecerá información con las máquinas virtuales que estén activas en el proyecto y región especificadas.
+Comprueba que todo está correcto mostrando información del inventario, si no tienes máquinas virtuales activas debería aparecer algo similar a lo mostrado en el siguiente comando, 
+en caso contrarion aparecerá información con las máquinas virtuales que estén activas en el proyecto y región especificadas.
 
 ```
 $ ansible-inventory --list
@@ -92,7 +92,10 @@ $ ansible-inventory --list
 ### Playbook para crear IP y MV
 
 Implementa un playbook para crear una máquina virtual y su IP pública.
-En este playbook, vamos a utilizar un fichero para las variables confidenciales, usuario y clave ssh para conectar con las MV que no expondremos en el repositorio git (incluyendo en .gitignore la carpeta secret); seguimos utilizando la ubicación de la cuenta de servicio mediante la variable de entorno (GCP_SERVICE_ACCOUNT_FILE) y se necesitarán dos variables extras, 'nombre' para el nombre de la máquina y 'accion' por si queremos crearla (present) o eliminarla (absent).
+En este playbook, vamos a utilizar un fichero para las variables confidenciales, usuario y clave ssh para conectar con las MV, 
+que no expondremos en el repositorio git (incluyendo en .gitignore la carpeta secret/); seguimos utilizando la ubicación de la
+cuenta de servicio mediante la variable de entorno (GCP_SERVICE_ACCOUNT_FILE) y se necesitarán dos variables extras, 
+'nombre' para el nombre de la máquina y 'accion' por si queremos crearla (present) o eliminarla (absent).
 
 Vamos a crear primero nuestras variables confidenciales en ./secret/vars.yaml:
 
@@ -103,15 +106,18 @@ usuario: usuario
 clave_ssh: ssh-rsa AAAA ... usuario@HOST
 ```
 
-Creemos ahora el playbook:
+Creemos ahora el playbook (vm.yaml):
 
 
 ```yaml
+
+---
+
 - name: Compute Engine instances
   hosts: localhost
-  gather_facts: no  
+  gather_facts: no
   vars_files:
-    - /secret/vars.yaml
+    - ./secret/vars.yaml  
   vars:
       gcp_project: cc-2024
       gcp_cred_kind: serviceaccount
@@ -125,17 +131,17 @@ Creemos ahora el playbook:
   tasks:
 
   - name: Gestiona IP address para VM
-    gcp_compute_address:
+    google.cloud.gcp_compute_address:
       name: "{{ nombre }}-ip"
       state: "{{accion}}"
       region: "{{ region }}"
       project: "{{ gcp_project }}"
-      #service_account_file: "{{ gcp_cred_file }}"
+      #service_account_file: definida mediante variable de entorno
       auth_kind: "{{ gcp_cred_kind }}"
     register: gce_ip
 
   - name: Gestiona instancia de VM
-    gcp_compute_instance:
+    google.cloud.gcp_compute_instance:
       name: "{{ nombre }}-vm"
       state: "{{accion}}"
       machine_type: "{{ machine_type }}"
@@ -157,7 +163,7 @@ Creemos ahora el playbook:
         ssh-keys: "{{usuario}}:{{clave_ssh}}"
       zone: "{{ zone }}"
       project: "{{ gcp_project }}"
-      # service_account_file: "{{ gcp_cred_file }}"
+      # service_account_file: definida mediante variable de entorno
       auth_kind: "{{ gcp_cred_kind }}"
     register: gce
 
@@ -174,6 +180,8 @@ Creemos ahora el playbook:
         - IP {{gce_ip.address}}
         - VM {{gce.name}}
     when: accion=="present"
+
+
 ```
 
 Utilizando el playbook anterior, crearemos tres máquinas virtuales, mediante:
@@ -211,13 +219,15 @@ $ ansible-inventory --list
 Vamos a crear un playbook que haga ping a los servidores para comprobar que podemos establecer conexión con ellos:
 
 ```yaml
-# ping.yml
+# ping.yaml
+
 ---
+
 - name: Ping all servers
   hosts: all
   tasks:
   - name: Ping a todos los servidores
-    action: ping
+    ansible.builtin.ping:
 ```
 Ejacútalo con:
 
@@ -272,6 +282,7 @@ $ ansible-playbook vm.yaml --extra-vars "nombre=lb accion=absent"
 Crea un playbook, en el fichero install-services.yaml, para instalar Apache en el balanceador y Apache y PHP en los webservers.
 
 ```yaml
+
 # install-services.yaml
 
 ---
