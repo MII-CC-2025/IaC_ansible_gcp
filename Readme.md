@@ -1,5 +1,10 @@
 # Ansible con Google Cloud Platform
+https://docs.ansible.com/ansible/9/scenario_guides/guide_gce.html
+
+Deprecate desde ansible 12:
 https://docs.ansible.com/ansible/latest/scenario_guides/guide_gce.html
+
+
 
 En esta guía, utilizando Ansible, vamos a crear, en el cloud de Google, un balanceador de carga con tres máquinas (con Ubunut 20.04), dos de ellas harán de servidores web, en los que instalaremos Apache, PHP y una app web y la tercera será el balanceador, en la que instalaremos Apache, habilitaremos los módulos oportunos y estableceremos la configuración para que lleve a cabo el balanceo de carga.
 
@@ -16,7 +21,7 @@ $ pip install requests google-auth
 ### Genera las credenciales con una cuenta de servicio
 
 1.- En la consola web de GCP accede al Menu, IAM y Cuenta de Servicio.
-Si se solicita, seleccione el proyecto o cree uno nuevo. Supongamos que el ID del proyecto es cc-2024.
+Si se solicita, seleccione el proyecto o cree uno nuevo. Supongamos que el ID del proyecto es cc-2025.
 
 2.- Clic en + Crear cuenta de servicio.
 En los detalles de la cuenta de servicio, escriba un nombre, ID y descripción, luego haga clic en Crear y continuar.
@@ -24,8 +29,8 @@ En los detalles de la cuenta de servicio, escriba un nombre, ID y descripción, 
 3.- En Otorgar privilegios, seleccione las funciones de IAM para otorgar a la cuenta de servicio. Por ejemplo, en Rol seleccione Editor.
 Haga clic en Continuar.
 
-4.- Opcional: en Otorgar acceso a los usuarios a esta cuenta de servicio , agregue los usuarios o grupos que pueden usar y administrar la cuenta de servicio.
-Haga clic en Listo .
+4.- Opcional: en Otorgar acceso a los usuarios a esta cuenta de servicio, agregue los usuarios o grupos que pueden usar y administrar la cuenta de servicio.
+Haga clic en Listo.
 
 5.- A continuación, cree una clave de cuenta de servicio:
 
@@ -51,7 +56,7 @@ plugin: google.cloud.gcp_compute
 zones:
   - us-central1-a
 projects:
-  - cc-2024
+  - Tu-Project-ID
 auth_kind: serviceaccount
 #service_account_file: Variable de entorno GCP_SERVICE_ACCOUNT_FILE 
 filters:
@@ -93,11 +98,11 @@ $ ansible-inventory --list
 
 Implementa un playbook para crear una máquina virtual y su IP pública.
 En este playbook, vamos a utilizar un fichero para las variables confidenciales, usuario y clave ssh para conectar con las MV, 
-que no expondremos en el repositorio git (incluyendo en .gitignore la carpeta secret/); seguimos utilizando la ubicación de la
+que no expondremos en el repositorio git (incluyendo en .gitignore la carpeta secrets/); seguimos utilizando la ubicación de la
 cuenta de servicio mediante la variable de entorno (GCP_SERVICE_ACCOUNT_FILE) y se necesitarán dos variables extras, 
 'nombre' para el nombre de la máquina y 'accion' por si queremos crearla (present) o eliminarla (absent).
 
-Vamos a crear primero nuestras variables confidenciales en ./secret/vars.yaml:
+Vamos a crear primero nuestras variables confidenciales en ./secrets/vars.yaml:
 
 ```yaml
 # Usuario 
@@ -117,16 +122,19 @@ Creemos ahora el playbook (vm.yaml):
   hosts: localhost
   gather_facts: no
   vars_files:
-    - ./secret/vars.yaml  
+    - ./secrets/vars.yaml  
   vars:
-      gcp_project: cc-2024
+      gcp_project: Tu-Project_ID
       gcp_cred_kind: serviceaccount
       # gcp_cred_file: definida mediante variable de entorno
       zone: "us-central1-a"
       region: "us-central1"
       machine_type: "e2-micro"
+      
+      # Buscar mediante imágenes disponibles consultando el comando Rest
       image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-2004-lts"
-      # required extra-vars: nombre and accion. Use ansible-playbook ... --extra-vars "nombre=server accion=present/absent"
+      
+      # Se requieren dos extra-vars: nombre y accion. Usar ansible-playbook ... --extra-vars "nombre=server accion=present/absent"
 
   tasks:
 
